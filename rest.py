@@ -1,16 +1,22 @@
+
+from fileinput import close
 from colorama import Cursor
 import pymysql
 from sqlalchemy import true
 from app import app
 from db import mysql
 from flask import request, jsonify
+from flask import Flask
 import jwt
 import random
 from flask import flash, request
 from flask import request
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from flask_cors import CORS, cross_origin
 
+app = Flask(__name__)
+cors = CORS(app, resources={r"/api/v1/adminRoute/*": {"origins": "*"}})
 
 @app.route('/api/v1/userRoute/signupUser', methods=['POST'])
 def RegisterUser():
@@ -242,6 +248,372 @@ def getStatus():
 		cursor.close() 
 		conn.close()
 
+# ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+@app.route('/api/v1/adminRoute/signInUser')
+@cross_origin()
+def signInAdminUser():
+	email = request.headers['email']
+	password = request.headers['password']
+	conn = None
+	cursor = None
+	try:
+		sql = "SELECT * FROM adminusers WHERE user_email=%s and user_password=%s"
+		data = (email,password)
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		userID = cursor.execute(sql,data)
+		row = cursor.fetchone()
+
+		n = random.randint(10000000000,1000000000000000)
+
+		if userID :
+			resp = jsonify(
+				StatusCode = 200,
+				Token = n,
+				user_nic = row[0],
+				user_name = row[3],
+				user_type = row[6],
+                area = row[4],
+				
+				massage = 'User logged in successfully'
+			)
+		else:
+			resp = jsonify(
+				StatusCode = 403,
+				massage = 'User Email or Password is incorrect'
+			)
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+@app.route('/api/v1/adminRoute/getAllUsers')
+@cross_origin()
+def getAllUsers():
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(
+            "SELECT user_id id, user_name name, user_email email, user_password pwd FROM user")
+        rows = cursor.fetchall()
+        resp = jsonify(rows)
+        resp.status_code = 200
+        return resp
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/v1/adminRoute/getAllSellers')
+@cross_origin()
+def getAllSellers():
+	conn = None
+	cursor = None
+	type = "Seller"
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		sql = "select user_nic nic,user_email email,user_password password,user_name name,area area,user_no no from adminusers where user_type=%s"
+		data = type
+		cursor.execute(sql,data)
+		rows = cursor.fetchall()
+		resp = jsonify(rows)
+		resp.status_code =200
+		return resp	
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+
+@app.route('/api/v1/adminRoute/deleteSellers', methods=['DELETE'])
+@cross_origin()
+def deleteSeller():
+	nic = request.headers['nic']
+	conn = None
+	cursor = None
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM adminusers WHERE user_nic=%s", (nic,))
+		conn.commit()
+		resp = jsonify(
+				StatusCode = 200,
+				massage = 'Seller Deleted Successful'
+			)
+		resp.status_code = 200
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+@app.route('/api/v1/adminRoute/addSellers', methods=['POST'])
+@cross_origin()
+def addSeller():
+    conn = None
+    cursor = None
+    try:
+        _json = request.json
+
+        _nic = _json['nic']
+        _name = _json['name']
+        _email = _json['email']
+        _area = _json['area']
+        _contact = _json['contact']
+        _password = _json['password']
+        _type = "SELLER"
+        _qty = 0
+        _date = _json['date']
+
+        if _nic and _name and _email and _area and _contact and _password and request.method == 'POST':
+            sql = "INSERT INTO adminusers(user_nic,user_email,user_password,user_name,area,user_no,user_type) VALUES (%s, %s, %s, %s ,%s, %s, %s)"
+            data = (_nic, _email, _password, _name, _area, _contact, _type)
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute(sql, data)
+
+
+            sql2 = "INSERT INTO distribut_gas(user_nic,qty,addedd_date) VALUES (%s, %s, %s)"
+            data2 = (_nic,_qty,_date)
+            cursor.execute(sql2, data2)
+            conn.commit()
+
+            resp = jsonify(
+                status='Seller Added successfully!',
+                statusCode=200
+            )
+            resp.status_code = 200
+            return resp
+        else:
+            return not_found()
+
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/v1/adminRoute/getAllproduct')
+@cross_origin()
+def getAllProduct():
+	conn = None
+	cursor = None
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		sql = "select * from product"
+		cursor.execute(sql)
+		rows = cursor.fetchall()
+		resp = jsonify(rows)
+		resp.status_code =200
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+@app.route('/api/v1/adminRoute/getAllproductStatus')
+@cross_origin()
+def getAllproductStatus():
+	conn = None
+	cursor = None
+	status1 = "Completed"
+	status2 = "Pending"
+	status3 = "Delivering"
+	status4 = "PickUp"
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		sql = "select count(order_id) orderCount from orderdetails"
+		cursor.execute(sql)
+		row = cursor.fetchone()
+
+		sql2 = "select count(order_id) completeOrder from orderdetails where order_status=%s"
+		data = status1
+		cursor.execute(sql2,data)
+		row2 = cursor.fetchone()
+
+		sql3 = "select count(order_id) pendingOrder from orderdetails where order_status=%s"
+		data2 = status2
+		cursor.execute(sql3, data2)
+		row3 = cursor.fetchone()
+
+		sql4 = "select count(order_id) takeitOrder from orderdetails where order_status=%s"
+		data3 = status4
+		cursor.execute(sql4, data3)
+		row4 = cursor.fetchone()
+
+		sql5 = "select count(order_id) deliveryOrder from orderdetails where order_status=%s"
+		data4 = status3
+		cursor.execute(sql5, data4)
+		row5 = cursor.fetchone()
+
+
+		resp = jsonify(
+			order = row,
+			complete=row2,
+			pending = row3,
+			takeit = row4,
+			delivery = row5
+		)
+		resp.status_code = 200
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+@app.route('/api/v1/adminRoute/getQty', methods=['POST'])
+@cross_origin()
+def getQtyFromId():
+    conn = None
+    cursor = None
+    nic = request.headers['nic']
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        sql2 = "select qty,a.user_name,a.area from distribut_gas d,adminusers a where a.user_nic=d.user_nic and d.user_nic=%s"
+        data = nic
+        qty = cursor.execute(sql2, data)
+        row2 = cursor.fetchone()
+
+        sql3 = "select qty from distribut_gas where distribut_id=%s"
+        data3 = 1
+        cursor.execute(sql3, data3)
+        row3 = cursor.fetchone()
+
+        if qty:
+            resp = jsonify(
+                StatusCode=200,
+                data=row2,
+                data2=row3
+            )
+            resp.status_code = 200
+        else:
+            resp = jsonify(
+                StatusCode=403,
+                massage='Seller Nic incorrect'
+            )
+        return resp
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/v1/adminRoute/getAllQty')
+@cross_origin()
+def getAllQty():
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        sql = "select qty from distribut_gas where distribut_id=%s"
+        data = 1
+        cursor.execute(sql, data)
+        row = cursor.fetchone()
+        resp = jsonify(row)
+        resp.status_code = 200
+        return resp
+
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/api/v1/adminRoute/updateQty', methods=['PUT'])
+@cross_origin()
+def updateQty():
+    conn = None
+    cursor = None
+    try:
+        _json = request.json
+        _nic = _json['nic']
+        _qty = _json['qty']
+        _newAdminQty = _json['newAdminQty']
+        _date = _json['date']
+
+        if _nic and _qty and request.method == 'PUT':
+
+            print(_nic)
+            print(_qty)
+
+            sql = "UPDATE distribut_gas SET qty=%s,addedd_date=%s WHERE user_nic=%s"
+            data = (_qty,_date,_nic )
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute(sql, data)
+
+
+            sql2 = "UPDATE distribut_gas SET qty=%s,addedd_date=%s WHERE distribut_id=%s"
+            data2 = (_newAdminQty,_date,1)
+            cursor.execute(sql2, data2)
+            conn.commit()
+            resp = jsonify('Qty updated successfully!')
+            resp.status_code = 200
+            return resp
+        else:
+            return not_found()
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/api/v1/adminRoute/addRecord', methods=['POST'])
+@cross_origin()
+def addSellrecord():
+    conn = None
+    cursor = None
+    try:
+        _json = request.json
+
+        _nic = _json['nic']
+        _qty = _json['qty']
+        _date = _json['date']
+
+        if _nic and _qty and _date and request.method == 'POST':
+
+            sql = "INSERT INTO distribute_details(seller_nic, dispensing_amount, distribute_date) VALUES( %s, %s, %s)"
+            data = (_nic, _qty, _date)
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute(sql, data)
+            conn.commit()
+            resp = jsonify(
+                status='Distribut_details added successfully!',
+            )
+            resp.status_code = 200
+            return resp
+        else:
+            return not_found()
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @app.errorhandler(404)
@@ -255,7 +627,173 @@ def not_found(error=None):
 
     return resp
 
+@app.route('/api/v1/adminRoute/getAllRecord')
+@cross_origin()
+def getAllRecords():
+	conn = None
+	cursor = None
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		sql = "select * from distribute_details"
+		cursor.execute(sql)
+		rows = cursor.fetchall()
+		resp = jsonify(rows)
+		resp.status_code =200
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
 
+@app.route('/api/v1/adminRoute/getAllPickUpOrders', methods=['POST'])
+@cross_origin()
+def getAllPickUpOrders():
+    conn = None
+    cursor = None
+    city = request.headers['city']
+    try:
+        print(city)
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        sql = "select o.order_id,u.user_name,o.order_detail,o.order_city,o.contact_no,o.order_payment_type,o.order_status,o.order_date from orderdetails o, user u where  o.order_type=%s and o.order_city=%s and u.user_id=o.user_id and o.order_status IN (%s,%s)"
+        data =("PickUp",city,"Pending","PickUp")
+        cursor.execute(sql,data)
+        rows = cursor.fetchall()
+        resp = jsonify(rows)
+        resp.status_code = 200
+        return resp
+
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/api/v1/adminRoute/getAllDeliveryOrders', methods=['POST'])
+@cross_origin()
+def getAllDeliveryOrders():
+    conn = None
+    cursor = None
+    city = request.headers['city']
+    try:
+        print(city)
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        sql = "select o.order_id,u.user_name,o.order_detail,o.order_city,o.order_delivery_address,o.contact_no,o.order_payment_type,o.order_status,o.order_date from orderdetails o, user u where  o.order_type=%s and o.order_city=%s and u.user_id=o.user_id and o.order_status IN (%s,%s)"
+        data =("Delivery",city,"Pending","Delivering")
+        cursor.execute(sql,data)
+        rows = cursor.fetchall()
+        resp = jsonify(rows)
+        resp.status_code = 200
+        return resp
+
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/v1/adminRoute/updateStatus', methods=['PUT'])
+@cross_origin()
+def updateOrderStatus():
+	conn = None
+	cursor = None
+	try:
+		_json = request.json
+		_oid = _json['oid']
+		_status = _json['status']
+
+		print(type(_status))
+
+
+
+		sql = "UPDATE orderdetails SET order_status=%s WHERE order_id=%s"
+		data = (_status,_oid)
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute(sql, data)
+		conn.commit()
+		resp = jsonify(
+			status='Status Update successfully!',
+		)
+		resp.status_code = 200
+		return resp
+
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+
+@app.route('/api/v1/adminRoute/getAllOrderDetailForSeller', methods=['POST'])
+@cross_origin()
+def getAllOrderDetailForSeller():
+	conn = None
+	cursor = None
+	_city = request.headers['city']
+	_nic = request.headers['nic']
+	try:
+
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		sql = "select count(order_id) AllOrders from orderdetails  where order_city=%s"
+		data = _city
+		cursor.execute(sql,data)
+		row = cursor.fetchone()
+
+		sql2 = "select count(order_id) CompletedOrders from orderdetails where order_city=%s and order_status=%s"
+		data2 = (_city,"Completed")
+		cursor.execute(sql2,data2)
+		row2 = cursor.fetchone()
+
+		sql3 = "SELECT qty GasQty FROM  distribut_gas where user_nic=%s"
+		data3 = _nic
+		cursor.execute(sql3, data3)
+		row3 = cursor.fetchone()
+
+
+
+		resp = jsonify(
+			order = row,
+			complete=row2,
+			gas = row3,
+		)
+		resp.status_code = 200
+		return resp
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
+@app.route('/api/v1/adminRoute/updateSellerQty', methods=['PUT'])
+@cross_origin()
+def updateSellerQty():
+	conn = None
+	cursor = None
+	_qty = request.headers['qty']
+	_nic = request.headers['nic']
+	try:
+
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		sql = "UPDATE distribut_gas SET qty=%s WHERE user_nic=%s"
+		data = (_qty, _nic)
+		cursor.execute(sql, data)
+		conn.commit()
+		resp = jsonify('Qty updated successfully!')
+		resp.status_code = 200
+		return resp
+
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
 
 if __name__ == "__main__":
     app.run(debug=true)
