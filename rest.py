@@ -18,6 +18,11 @@ from flask_cors import CORS, cross_origin
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/v1/adminRoute/*": {"origins": "*"}})
 
+@app.route('/test')
+def hello():
+	return 'Welcome to happygas'
+
+
 @app.route('/api/v1/userRoute/signupUser', methods=['POST'])
 def RegisterUser():
     conn = None
