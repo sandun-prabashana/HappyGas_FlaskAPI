@@ -248,7 +248,7 @@ def OrderItem():
 		_date = _json['date']
 		_time = _json['time']
 		print("ok6")
-		print(_id,_detail,_address,_city,_no,_paymenttype,_type,_status)
+		print(_id,_detail,_address,_city,_no,_paymenttype,_type,_status,_date,_time)
 
 		if _id and _detail and _address and _city and _no and _paymenttype and _type and _status and request.method == 'POST':
 			print("ok7")
