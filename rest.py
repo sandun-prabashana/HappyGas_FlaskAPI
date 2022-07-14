@@ -2,7 +2,9 @@
 from fileinput import close
 from colorama import Cursor
 import pymysql
+import pickle
 from sqlalchemy import true
+import numpy as np
 from app import application
 from db import mysql
 from flask import request, jsonify
@@ -18,8 +20,48 @@ from flask_cors import CORS, cross_origin
 application = Flask(__name__)
 cors = CORS(application, resources={r"/api/v1/adminRoute/*": {"origins": "*"}})
 
+with open('Colombo.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Colombo =int(new_data[0, 0])
+
+with open('DEHIWALA.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Dehiwala =int(new_data[0, 0])
+
+with open('GALLE.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Galle =int(new_data[0, 0])
+
+with open('GAMPAHA.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Gampaha =int(new_data[0, 0])
+
+with open('KANDY.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Kandy =int(new_data[0, 0])
+
+with open('KOLONNAWA.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Kolonnawa =int(new_data[0, 0])
+
+with open('MAHARAGAMA.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Maharagama =int(new_data[0, 0])
+
+with open('MORATUWA.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Moratuwa =int(new_data[0, 0])
+
+with open('NEGAMBO.pkl', 'rb') as pickle_file:
+	new_data = pickle.load(pickle_file)
+	Negambo =int(new_data[0, 0])
+
+Count = Colombo+Dehiwala+Maharagama+Moratuwa+Negambo+Galle+Gampaha+Kandy+Kolonnawa
+
 @application.route('/test')
 def hello():
+
+	print (Count)
 	return 'Welcome to happygas'
 
 
@@ -364,52 +406,83 @@ def deleteSeller():
 		cursor.close()
 		conn.close()
 
-
 @application.route('/api/v1/adminRoute/addSellers', methods=['POST'])
 @cross_origin()
 def addSeller():
-    conn = None
-    cursor = None
-    try:
-        _json = request.json
+	conn = None
+	cursor = None
+	try:
+		_json = request.json
 
-        _nic = _json['nic']
-        _name = _json['name']
-        _email = _json['email']
-        _area = _json['area']
-        _contact = _json['contact']
-        _password = _json['password']
-        _type = "SELLER"
-        _qty = 0
-        _date = _json['date']
+		_nic = _json['nic']
+		_name = _json['name']
+		_email = _json['email']
+		_area = _json['area']
+		_contact = _json['contact']
+		_password = _json['password']
+		_type = "SELLER"
+		_qty = 0
+		_date = _json['date']
+		if _nic and _name and _email and _area and _contact and _password and request.method == 'POST':
+			sql = "INSERT INTO adminusers(user_nic,user_email,user_password,user_name,area,user_no,user_type) VALUES (%s, %s, %s, %s ,%s, %s, %s)"
+			data = (_nic, _email, _password, _name, _area, _contact, _type)
+			conn = mysql.connect()
+			cursor = conn.cursor()
+			cursor.execute(sql, data)
 
-        if _nic and _name and _email and _area and _contact and _password and request.method == 'POST':
-            sql = "INSERT INTO adminusers(user_nic,user_email,user_password,user_name,area,user_no,user_type) VALUES (%s, %s, %s, %s ,%s, %s, %s)"
-            data = (_nic, _email, _password, _name, _area, _contact, _type)
-            conn = mysql.connect()
-            cursor = conn.cursor()
-            cursor.execute(sql, data)
+			if _area == 'Colombo':
+				_qty=Colombo/12
+
+			elif _area == 'Dehiwala':
+				_qty = Dehiwala/12
+
+			elif _area == 'Maharagama':
+				_qty = Maharagama/12
+
+			elif _area == 'Moratuwa':
+				_qty = Moratuwa/12
+
+			elif _area == 'Negambo':
+				_qty = Negambo/12
+
+			elif _area == 'Galle':
+				_qty = Galle/12
+
+			elif _area == 'Gampaha':
+				_qty = Gampaha/12
+
+			elif _area == 'Kandy':
+				_qty = Kandy/12
+
+			elif _area == 'Kolonnawa':
+				_qty = Kolonnawa/12
+
+			sql2 = "INSERT INTO distribut_gas(user_nic,qty,addedd_date) VALUES (%s, %s, %s)"
+			data2 = (_nic, _qty, _date)
+			cursor.execute(sql2, data2)
+
+			sql3 = "INSERT INTO distribute_details(seller_nic, dispensing_amount, distribute_date) VALUES( %s, %s, %s)"
+			data3 = (_nic, _qty, _date)
+			cursor.execute(sql3, data3)
+
+			conn.commit()
+
+			resp = jsonify(
+				status='Seller Added successfully!',
+				statusCode=200
+			)
+			resp.status_code = 200
+			return resp
+		else:
+			return not_found()
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
 
 
-            sql2 = "INSERT INTO distribut_gas(user_nic,qty,addedd_date) VALUES (%s, %s, %s)"
-            data2 = (_nic,_qty,_date)
-            cursor.execute(sql2, data2)
-            conn.commit()
 
-            resp = jsonify(
-                status='Seller Added successfully!',
-                statusCode=200
-            )
-            resp.status_code = 200
-            return resp
-        else:
-            return not_found()
-
-    except Exception as e:
-        print(e)
-    finally:
-        cursor.close()
-        conn.close()
 
 @application.route('/api/v1/adminRoute/getAllproduct')
 @cross_origin()
