@@ -255,7 +255,7 @@ def OrderItem():
 
 		if _id and _detail and _address and _city and _no and _paymenttype and _type and _status and request.method == 'POST':
 			print("ok7")
-			sql = "INSERT INTO orderDetails(user_id,order_detail,order_delivery_address,order_city,contact_no,order_payment_type,order_type,order_status,order_date,order_time) VALUES(%s, %s, %s, %s,%s, %s, %s, %s, %s, %s)"
+			sql = "INSERT INTO orderdetails(user_id,order_detail,order_delivery_address,order_city,contact_no,order_payment_type,order_type,order_status,order_date,order_time) VALUES(%s, %s, %s, %s,%s, %s, %s, %s, %s, %s)"
 			data = (_id,_detail,_address,_city,_no,_paymenttype,_type,_status,_date,_time)
 			print("ok8")
 			conn = mysql.connect()
@@ -278,6 +278,7 @@ def OrderItem():
 		conn.close()
 
 @app.route('/api/v1/orderRoute/orderStatus')
+@cross_origin()
 def getStatus():
 	id = request.headers['id']
 	conn = None
@@ -285,7 +286,7 @@ def getStatus():
 	try:
 		conn = mysql.connect()
 		cursor = conn.cursor(pymysql.cursors.DictCursor)
-		cursor.execute("SELECT * FROM orderDetails WHERE user_id=%s", id)
+		cursor.execute("SELECT * FROM orderdetails WHERE user_id=%s", id)
 		row = cursor.fetchall()
 		resp = jsonify(row)
 		print("----------------------")
