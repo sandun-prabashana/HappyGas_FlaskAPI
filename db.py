@@ -1,4 +1,4 @@
-from app import application
+from app import app
 from flaskext.mysql import MySQL
 
 mysql = MySQL()
@@ -8,8 +8,8 @@ mysql = MySQL()
 # application.config['MYSQL_DATABASE_DB'] = 'happygas'
 # application.config['MYSQL_DATABASE_HOST'] = 'happygas.cye7dm9aermq.us-west-2.rds.amazonaws.com'
 
-application.config['MYSQL_DATABASE_USER'] = 'root'
-application.config['MYSQL_DATABASE_PASSWORD'] = 'mysql'
-application.config['MYSQL_DATABASE_DB'] = 'HappyGas'
-application.config['MYSQL_DATABASE_HOST'] = 'localhost'
-mysql.init_app(application)
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'mysql'
+app.config['MYSQL_DATABASE_DB'] = 'HappyGas'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+mysql.init_app(app)

@@ -5,7 +5,7 @@ import pymysql
 import pickle
 from sqlalchemy import true
 import numpy as np
-from app import application
+from app import app
 from db import mysql
 from flask import request, jsonify
 from flask import Flask
@@ -17,8 +17,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from flask_cors import CORS, cross_origin
 
-application = Flask(__name__)
-cors = CORS(application, resources={r"/api/v1/adminRoute/*": {"origins": "*"}})
+
+app = Flask(__name__)
+
+
+cors = CORS(app, resources={r"/api/v1/adminRoute/*": {"origins": "*"}})
 
 with open('Colombo.pkl', 'rb') as pickle_file:
 	new_data = pickle.load(pickle_file)
@@ -58,14 +61,14 @@ with open('NEGAMBO.pkl', 'rb') as pickle_file:
 
 Count = Colombo+Dehiwala+Maharagama+Moratuwa+Negambo+Galle+Gampaha+Kandy+Kolonnawa
 
-@application.route('/test')
+@app.route('/test')
 def hello():
 
 	print (Count)
 	return 'Welcome to happygas'
 
 
-@application.route('/api/v1/userRoute/signupUser', methods=['POST'])
+@app.route('/api/v1/userRoute/signupUser', methods=['POST'])
 def RegisterUser():
     conn = None
     cursor = None
@@ -103,7 +106,7 @@ def RegisterUser():
         conn.close()
 
 
-@application.route('/users')
+@app.route('/users')
 def users():
     conn = None
     cursor = None
@@ -125,7 +128,7 @@ def users():
 
 
 
-@application.route('/api/v1/userRoute/signInUser')
+@app.route('/api/v1/userRoute/signInUser')
 def signInUser():
 	id = request.headers['id']
 	password = request.headers['password']
@@ -174,7 +177,7 @@ def signInUser():
 		cursor.close()
 		conn.close()
 
-@application.route('/update', methods=['PUT'])
+@app.route('/update', methods=['PUT'])
 def update_user():
     conn = None
     cursor = None
@@ -207,7 +210,7 @@ def update_user():
         conn.close()
 
 
-@application.route('/delete/<id>', methods=['DELETE'])
+@app.route('/delete/<id>', methods=['DELETE'])
 def delete_user(id):
     conn = None
     cursor = None
@@ -226,7 +229,7 @@ def delete_user(id):
         conn.close()
 
 
-@application.route('/api/v1/orderRoute/placeOrder' , methods=['POST'])
+@app.route('/api/v1/orderRoute/placeOrder' , methods=['POST'])
 def OrderItem():
 	print("ok")
 	conn = None
@@ -274,7 +277,7 @@ def OrderItem():
 		cursor.close()
 		conn.close()
 
-@application.route('/api/v1/orderRoute/orderStatus')
+@app.route('/api/v1/orderRoute/orderStatus')
 def getStatus():
 	id = request.headers['id']
 	conn = None
@@ -298,7 +301,7 @@ def getStatus():
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-@application.route('/api/v1/adminRoute/signInUser')
+@app.route('/api/v1/adminRoute/signInUser')
 @cross_origin()
 def signInAdminUser():
 	email = request.headers['email']
@@ -339,7 +342,7 @@ def signInAdminUser():
 		conn.close()
 
 
-@application.route('/api/v1/adminRoute/getAllUsers')
+@app.route('/api/v1/adminRoute/getAllUsers')
 @cross_origin()
 def getAllUsers():
     conn = None
@@ -359,7 +362,7 @@ def getAllUsers():
         cursor.close()
         conn.close()
 
-@application.route('/api/v1/adminRoute/getAllSellers')
+@app.route('/api/v1/adminRoute/getAllSellers')
 @cross_origin()
 def getAllSellers():
 	conn = None
@@ -383,7 +386,7 @@ def getAllSellers():
 
 
 
-@application.route('/api/v1/adminRoute/deleteSellers', methods=['DELETE'])
+@app.route('/api/v1/adminRoute/deleteSellers', methods=['DELETE'])
 @cross_origin()
 def deleteSeller():
 	nic = request.headers['nic']
@@ -406,7 +409,7 @@ def deleteSeller():
 		cursor.close()
 		conn.close()
 
-@application.route('/api/v1/adminRoute/addSellers', methods=['POST'])
+@app.route('/api/v1/adminRoute/addSellers', methods=['POST'])
 @cross_origin()
 def addSeller():
 	conn = None
@@ -484,7 +487,7 @@ def addSeller():
 
 
 
-@application.route('/api/v1/adminRoute/getAllproduct')
+@app.route('/api/v1/adminRoute/getAllproduct')
 @cross_origin()
 def getAllProduct():
 	conn = None
@@ -505,7 +508,7 @@ def getAllProduct():
 		conn.close()
 
 
-@application.route('/api/v1/adminRoute/getAllproductStatus')
+@app.route('/api/v1/adminRoute/getAllproductStatus')
 @cross_origin()
 def getAllproductStatus():
 	conn = None
@@ -558,7 +561,7 @@ def getAllproductStatus():
 		conn.close()
 
 
-@application.route('/api/v1/adminRoute/getQty', methods=['POST'])
+@app.route('/api/v1/adminRoute/getQty', methods=['POST'])
 @cross_origin()
 def getQtyFromId():
     conn = None
@@ -597,7 +600,7 @@ def getQtyFromId():
         cursor.close()
         conn.close()
 
-@application.route('/api/v1/adminRoute/getAllQty')
+@app.route('/api/v1/adminRoute/getAllQty')
 @cross_origin()
 def getAllQty():
     conn = None
@@ -620,7 +623,7 @@ def getAllQty():
         conn.close()
 
 
-@application.route('/api/v1/adminRoute/updateQty', methods=['PUT'])
+@app.route('/api/v1/adminRoute/updateQty', methods=['PUT'])
 @cross_origin()
 def updateQty():
     conn = None
@@ -660,7 +663,7 @@ def updateQty():
         conn.close()
 
 
-@application.route('/api/v1/adminRoute/addRecord', methods=['POST'])
+@app.route('/api/v1/adminRoute/addRecord', methods=['POST'])
 @cross_origin()
 def addSellrecord():
     conn = None
@@ -694,7 +697,7 @@ def addSellrecord():
         conn.close()
 
 
-@application.errorhandler(404)
+@app.errorhandler(404)
 def not_found(error=None):
     message = {
         'status': 404,
@@ -705,7 +708,7 @@ def not_found(error=None):
 
     return resp
 
-@application.route('/api/v1/adminRoute/getAllRecord')
+@app.route('/api/v1/adminRoute/getAllRecord')
 @cross_origin()
 def getAllRecords():
 	conn = None
@@ -725,7 +728,7 @@ def getAllRecords():
 		cursor.close()
 		conn.close()
 
-@application.route('/api/v1/adminRoute/getAllPickUpOrders', methods=['POST'])
+@app.route('/api/v1/adminRoute/getAllPickUpOrders', methods=['POST'])
 @cross_origin()
 def getAllPickUpOrders():
     conn = None
@@ -750,7 +753,7 @@ def getAllPickUpOrders():
         conn.close()
 
 
-@application.route('/api/v1/adminRoute/getAllDeliveryOrders', methods=['POST'])
+@app.route('/api/v1/adminRoute/getAllDeliveryOrders', methods=['POST'])
 @cross_origin()
 def getAllDeliveryOrders():
     conn = None
@@ -774,7 +777,7 @@ def getAllDeliveryOrders():
         cursor.close()
         conn.close()
 
-@application.route('/api/v1/adminRoute/updateStatus', methods=['PUT'])
+@app.route('/api/v1/adminRoute/updateStatus', methods=['PUT'])
 @cross_origin()
 def updateOrderStatus():
 	conn = None
@@ -807,7 +810,7 @@ def updateOrderStatus():
 		conn.close()
 
 
-@application.route('/api/v1/adminRoute/getAllOrderDetailForSeller', methods=['POST'])
+@app.route('/api/v1/adminRoute/getAllOrderDetailForSeller', methods=['POST'])
 @cross_origin()
 def getAllOrderDetailForSeller():
 	conn = None
@@ -848,7 +851,7 @@ def getAllOrderDetailForSeller():
 		cursor.close()
 		conn.close()
 
-@application.route('/api/v1/adminRoute/updateSellerQty', methods=['PUT'])
+@app.route('/api/v1/adminRoute/updateSellerQty', methods=['PUT'])
 @cross_origin()
 def updateSellerQty():
 	conn = None
@@ -874,4 +877,4 @@ def updateSellerQty():
 		conn.close()
 
 if __name__ == "__main__":
-    application.run(debug=true)
+    app.run(debug=true)
